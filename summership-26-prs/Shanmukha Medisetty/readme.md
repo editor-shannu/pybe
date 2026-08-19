@@ -134,8 +134,6 @@ summership-26-prs/Shanmukha Medisetty/
 │   │       ├── tracerEngine.js      # Core Notional Machine emulator & Misconception analyzer
 │   │       ├── codeEvaluator.js     # Static practice evaluator
 │   │       └── learningEngine.js    # Abstraction mapping & code generator
-├── PRODUCT.md                       # Comprehensive Product Specification & Theory
-├── SUBMISSION_ANSWERS.md            # Ready-to-copy internship submission review text
 └── readme.md                        # Project documentation
 ```
 
