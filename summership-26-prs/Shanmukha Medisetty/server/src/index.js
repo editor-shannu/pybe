@@ -6,6 +6,7 @@ const sessionRoutes = require('./routes/sessions');
 const analyticsRoutes = require('./routes/analytics');
 const roadmapRoutes = require('./routes/roadmap');
 const codeReviewRoutes = require('./routes/codeReview');
+const tracerRoutes = require('./routes/tracer');
 require('dotenv').config();
 
 const app = express();
@@ -21,6 +22,7 @@ app.use('/api/sessions', sessionRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/roadmap', roadmapRoutes);
 app.use('/api/code-review', codeReviewRoutes);
+app.use('/api/tracer', tracerRoutes);
 
 app.use((error, _req, res, _next) => {
   console.error(error);

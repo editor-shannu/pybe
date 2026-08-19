@@ -35,6 +35,7 @@ router.post('/', async (req, res, next) => {
       codeExplanation: engine.explainCode(abstractionMap),
       promptScore: prompt.score,
       promptFeedback: prompt.feedback,
+      tracerMetrics: req.body.tracerMetrics || null,
       reflection: req.body.reflection || '',
       misconceptions: engine.detectMisconceptions(req.body.reasoning),
       masterySignals: engine.masterySignals(abstractionMap, prompt.score)

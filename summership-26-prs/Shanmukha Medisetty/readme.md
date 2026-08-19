@@ -1,83 +1,147 @@
-# Code Practice & Evaluator — PyBe Submission
+# PyBe TraceLab — Cognitive Notional Machine & Step-by-Step Python Simulator
 
-## The Feature
+> **"Transforming abstract code into visible, interactive mental models."**  
+> *A production-grade pedagogical extension for PyBe built by Shanmukha Medisetty.*
 
-PyBe asked learners to reason, prompt, and reflect — but never to actually **write Python**. The generated snippet arrived ready-made, so the learner's hands never touched the keyboard as a programmer. The mentors named this gap directly in the review sessions: students should be able to hand-code solutions, not just provide prompts.
+---
 
-This submission adds a **Code Practice step with a deterministic code evaluator**:
+## 🌟 The Core Feature: PyBe TraceLab
 
-1. A **"Your Python attempt"** editor inside the learning session, where the learner translates their own reasoning into real code,
-2. A **"Check My Code"** button giving instant, pre-submission feedback — a score (0–100), which expected constructs were found or missing, and beginner-specific syntax warnings, and
-3. **Persistent code review** — the attempt and its evaluation are stored with the session, so the learner's actual code sits beside the AI-generated example in every result.
+In computing education, beginners frequently suffer from the **"Hidden State Illusion"** (*Sorva, 2013*). While reading Python code, the text on screen is static, but the computer's internal memory state is dynamically changing. Beginners cannot visualize what variables exist at line 2 versus line 4, how conditions evaluate dynamically, or how accumulators evolve across loop cycles.
 
-The evaluator is **pure static analysis**: learner code is treated as untrusted text and inspected with pattern rules. It is **never executed** — no `eval`, no subprocess, no sandbox needed. Fully deterministic and local, consistent with PyBe's V0 constraints, and like the rest of the learning engine, a clean seam for an LLM-based reviewer in V2.
+**PyBe TraceLab** introduces a complete **Cognitive Notional Machine & Execution Laboratory** to the PyBe platform:
 
-## The Philosophies Behind It
+1. 🔬 **Interactive Execution Stepper & AST Inspector**: Step forward and backward through Python code line-by-line with active glowing indicators, execution pointer badges, and adjustable playback speeds (`0.5x`, `1x`, `2x`).
+2. 🧠 **Notional Machine Memory Watch**: Real-time variable register board displaying variable identifiers, data type pills (`int`, `float`, `str`, `list`, `dict`, `bool`), and mutation flash animations (`@keyframes pulseMutation`) showing previous versus updated values.
+3. 🎯 **Socratic "Predict-the-State" Micro-Checkpoints**: At key decision points and arithmetic calculations, the simulator pauses and challenges the learner to predict the memory state or boolean branch outcome (*Chi's ICAP Framework — Interactive vs Passive Learning*).
+4. 🧭 **Physical-to-Abstract Real-World Anchor**: Maps abstract code transitions back to physical scenario invariants (e.g. school bag on scale, canteen tray receipt, temperature threshold alert).
+5. 🛡️ **Automated Misconception Diagnostician**: Detects classic novice cognitive traps (range boundary exclusion, accumulator reset inside loop, assignment `=` in condition, type coercion issues) with 1-click remediation advice.
+6. ⚡ **Custom Python Code Sandbox**: Write or edit arbitrary Python code and generate an instant, interactive Notional Machine execution trace.
+7. 📊 **Cognitive Analytics & Roadmap**: Tracks prediction accuracy, session counts, and concept mastery distributions.
 
-**Papert — Constructionism.** Learning happens most powerfully when the learner builds the artifact themselves. Reading a generated snippet is instruction; writing your own is construction. The feature makes the learner the author, and the generated code becomes a comparison point rather than the destination.
+---
 
-**Kolb — Experiential Learning Cycle.** Kolb's cycle has four quadrants: concrete experience, reflective observation, abstract conceptualization, and active experimentation. PyBe already had three — the scenario (experience), the reasoning box (reflection), and the abstraction map (conceptualization). The fourth quadrant was missing. Writing and checking real code **completes the cycle**, which is the specific reason this feature belongs in PyBe rather than being a generic "add an editor" idea.
+## 📚 Learning Science & Pedagogical Grounding
 
-**Ericsson — Deliberate Practice.** Skill grows fastest from attempts paired with immediate, specific feedback. "Check My Code" is exactly that loop: attempt → targeted feedback ("this scenario usually calls for a for loop — where could it fit?") → revise → re-check, as many times as the learner wants before committing the session.
+- **Juha Sorva — Notional Machine Theory (2013)**: Software state is invisible. Making variable registers, stack frames, and mutation events visible eliminates the novice "black box" illusion.
+- **Michelene Chi — ICAP Framework (2009)**: Active and interactive cognitive engagement (predicting the next state before seeing it) yields significantly higher conceptual retention than passive code reading.
+- **K. Anders Ericsson — Deliberate Practice (1993)**: Immediate, targeted explanations on why a predicted state was correct or incorrect builds strong mental models.
+- **David Kolb — Experiential Learning Cycle (1984)**: Completes the 4th quadrant (Active Experimentation) by allowing students to step through, predict, and mutate code states directly.
 
-## How Evaluation Works
+---
 
-For each scenario, the curriculum concepts (e.g. `loops`, `conditionals`) map to expected Python constructs. The evaluator then checks the attempt three ways:
+## 🛠️ Tech Stack & Architecture
 
-| Dimension | What it checks | Weight |
-|---|---|---|
-| Construct coverage | Expected constructs present (for/while, if/else, def, lists, dicts, comparisons…) | up to 50 |
-| Craftsmanship | Descriptive variable names, comments, meaningful length, printed output | up to 30 |
-| Syntax watch | Beginner slips: `=` instead of `==` in conditions, missing colons, Python-2 style `print`, unbalanced brackets | −8 each (max −24) |
+- **Frontend**: React 18 + Vite, Lucide Icons, Modern Glassmorphism CSS design system.
+- **Backend**: Node.js + Express (RESTful API).
+- **Tracer Engine**: Deterministic AST-level state simulator in Node.js (offline-first, zero external sandbox risks).
+- **Data Store**: Local JSON storage (`server/src/data/db.json`).
 
-Every attempt gets a base of 10 for trying — an empty submission gets encouragement, not a zero-score scolding. Feedback is phrased as questions and nudges, never verdicts, because the evaluator is a learning signal, not a compiler.
+---
 
-## What Changed
+## 🚀 Quick Start Guide
 
-```
-server/src/services/codeEvaluator.js   NEW — construct detectors, concept mapping,
-                                             syntax warnings, scoring (no code execution)
-server/src/routes/codeReview.js        NEW — POST /api/code-review (live pre-submission check)
-server/src/routes/sessions.js          + learnerCode accepted, evaluated, persisted per session
-server/src/index.js                    + mounts /api/code-review
-client/src/main.jsx                    + code editor, Check My Code button, live review card,
-                                         code review in the session result panel
-client/src/styles.css                  + editor and review-card styles
-```
+### 1. Prerequisites
+- **Node.js**: v18.0.0 or higher
+- **npm**: v9.0.0 or higher
 
-### API
-
-`POST /api/code-review` with `{ scenarioId, code }` returns:
-
-```json
-{
-  "attempted": true,
-  "score": 85,
-  "constructsFound": ["a for loop", "a comparison"],
-  "constructsMissing": [],
-  "syntaxWarnings": ["Line 3: looks like a single = inside a condition..."],
-  "feedback": ["Found a for loop — that matches this scenario's thinking."]
-}
-```
-
-`POST /api/sessions` now accepts an optional `learnerCode` field; the stored session gains `learnerCode` and `codeReview`.
-
-## Running It
+### 2. Installation & Setup
+From the `Shanmukha Medisetty` directory:
 
 ```bash
-npm run installAll   # server + client deps
-npm install          # root (concurrently)
+# Install root, server, and client dependencies
+npm run installAll
+
+# Configure environment (defaults work offline out-of-the-box)
 cp server/.env.example server/.env
+
+# Seed the 30 scenario curriculum
 npm run seed
+
+# Launch both server (Port 5000) and client (Port 5173)
 npm run dev
 ```
 
-- Frontend: http://localhost:5173 · API: http://localhost:5000/api
+### 3. Accessing the Application
+- **Frontend UI**: http://localhost:5173
+- **Backend API**: http://localhost:5000/api
+- **Health Check**: http://localhost:5000/api/health
 
-Pick any scenario, write your reasoning, then try expressing it in the "Your Python attempt" editor. Click **Check My Code** — the feedback updates instantly and you can revise as often as you like. Submit the session and your code review is stored alongside the AI mentor's output.
+---
 
-Try intentionally writing `if x = 5` or dropping a colon: the syntax watch catches the classic beginner slips with a plain-language explanation of each.
+## 📡 API Endpoints Specification
 
-## Why This Feature
+### `POST /api/tracer/trace`
+Generates step-by-step Notional Machine execution traces from scenario or user code.
+- **Request Body**: `{ "scenarioId": "...", "code": "optional custom code" }`
+- **Response**:
+```json
+{
+  "code": "samosa = 20\njuice = 15\ntotal = samosa + juice\nprint(f'Total: {total}')",
+  "totalSteps": 4,
+  "steps": [
+    {
+      "stepNumber": 1,
+      "line": 1,
+      "code": "samosa = 20",
+      "actionType": "assignment",
+      "variables": [
+        { "name": "samosa", "value": "20", "type": "int", "isNew": true, "isUpdated": false }
+      ],
+      "physicalAnchor": "🍽️ Canteen Counter: Ordering snack items.",
+      "checkpoint": null
+    }
+  ],
+  "stdout": ["Total: 35"],
+  "misconceptions": []
+}
+```
 
-Most submissions add themed content on top of the same interaction loop. This one changes what the learner *does*: PyBe's loop previously ended at reading generated code, and now it ends with the learner writing their own — the explicit mentor request, and the Kolb quadrant the product was missing.
+### `POST /api/tracer/predict`
+Validates Socratic state prediction answers.
+- **Request Body**: `{ "checkpoint": { ... }, "selectedIndex": 0 }`
+- **Response**: `{ "isCorrect": true, "pedagogicalFeedback": "...", "explanation": "..." }`
+
+---
+
+## 📁 Repository Structure
+
+```
+summership-26-prs/Shanmukha Medisetty/
+├── client/
+│   ├── index.html                   # HTML entry point with Google Fonts
+│   ├── package.json                 # Client dependencies
+│   ├── vite.config.js               # Vite bundler config
+│   └── src/
+│       ├── main.jsx                 # Top-level React UI & Notional Machine Stepper
+│       └── styles.css               # Modern glassmorphism design system
+├── server/
+│   ├── package.json                 # Server dependencies
+│   ├── src/
+│   │   ├── index.js                 # Server entry & route mounting
+│   │   ├── seed.js                  # 30 scenario curriculum seed script
+│   │   ├── data/
+│   │   │   ├── store.js             # JSON database store
+│   │   │   └── roadmap.js           # PyBe V0–V3 roadmap items
+│   │   ├── routes/
+│   │   │   ├── tracer.js            # Notional Machine & Prediction endpoints
+│   │   │   ├── scenarios.js         # Scenario CRUD
+│   │   │   ├── sessions.js          # Session persistence with tracerMetrics
+│   │   │   ├── analytics.js         # Cognitive analytics with prediction metrics
+│   │   │   ├── codeReview.js        # Static practice check
+│   │   │   └── roadmap.js           # Roadmap route
+│   │   └── services/
+│   │       ├── tracerEngine.js      # Core Notional Machine emulator & Misconception analyzer
+│   │       ├── codeEvaluator.js     # Static practice evaluator
+│   │       └── learningEngine.js    # Abstraction mapping & code generator
+├── PRODUCT.md                       # Comprehensive Product Specification & Theory
+├── SUBMISSION_ANSWERS.md            # Ready-to-copy internship submission review text
+└── readme.md                        # Project documentation
+```
+
+---
+
+## 👤 Author Information
+
+- **Contributor:** Shanmukha Medisetty
+- **Project:** PyBe TraceLab — Cognitive Notional Machine & Step-by-Step Python Simulator
