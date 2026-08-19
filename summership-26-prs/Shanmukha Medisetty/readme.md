@@ -1,145 +1,105 @@
-# PyBe TraceLab — Cognitive Notional Machine & Step-by-Step Python Simulator
+# PyBe TraceLab — Interactive Python Execution & Notional Machine
 
-> **"Transforming abstract code into visible, interactive mental models."**  
-> *A production-grade pedagogical extension for PyBe built by Shanmukha Medisetty.*
+## Overview
 
----
+PyBe TraceLab adds an interactive code execution and state inspection interface to PyBe. It allows learners to step through Python code line-by-line, observe variable changes in memory, and predict execution state before code runs.
 
-## 🌟 The Core Feature: PyBe TraceLab
+## Features
 
-In computing education, beginners frequently suffer from the **"Hidden State Illusion"** (*Sorva, 2013*). While reading Python code, the text on screen is static, but the computer's internal memory state is dynamically changing. Beginners cannot visualize what variables exist at line 2 versus line 4, how conditions evaluate dynamically, or how accumulators evolve across loop cycles.
+- **Step Stepper**: Step forward and backward through Python code line-by-line with play/pause and adjustable speed controls.
+- **Variable Memory Watch**: Shows variable names, data types, current values, and highlights updated variables during execution.
+- **State Prediction Checkpoints**: Prompts learners at key steps to predict variable values or branch outcomes before execution proceeds.
+- **Real-World Context Anchors**: Connects code execution steps to the scenario's physical context.
+- **Misconception Detection**: Checks for common beginner errors like assignment in conditions, range boundaries, and accumulator placement.
+- **Interactive Sandbox**: Allows testing custom Python code with live step-by-step state tracing.
+- **Learning Analytics**: Displays session metrics, concept counts, and prediction accuracy.
 
-**PyBe TraceLab** introduces a complete **Cognitive Notional Machine & Execution Laboratory** to the PyBe platform:
+## Tech Stack
 
-1. 🔬 **Interactive Execution Stepper & AST Inspector**: Step forward and backward through Python code line-by-line with active glowing indicators, execution pointer badges, and adjustable playback speeds (`0.5x`, `1x`, `2x`).
-2. 🧠 **Notional Machine Memory Watch**: Real-time variable register board displaying variable identifiers, data type pills (`int`, `float`, `str`, `list`, `dict`, `bool`), and mutation flash animations (`@keyframes pulseMutation`) showing previous versus updated values.
-3. 🎯 **Socratic "Predict-the-State" Micro-Checkpoints**: At key decision points and arithmetic calculations, the simulator pauses and challenges the learner to predict the memory state or boolean branch outcome (*Chi's ICAP Framework — Interactive vs Passive Learning*).
-4. 🧭 **Physical-to-Abstract Real-World Anchor**: Maps abstract code transitions back to physical scenario invariants (e.g. school bag on scale, canteen tray receipt, temperature threshold alert).
-5. 🛡️ **Automated Misconception Diagnostician**: Detects classic novice cognitive traps (range boundary exclusion, accumulator reset inside loop, assignment `=` in condition, type coercion issues) with 1-click remediation advice.
-6. ⚡ **Custom Python Code Sandbox**: Write or edit arbitrary Python code and generate an instant, interactive Notional Machine execution trace.
-7. 📊 **Cognitive Analytics & Roadmap**: Tracks prediction accuracy, session counts, and concept mastery distributions.
+- **Frontend**: React + Vite, Lucide Icons, Plain CSS
+- **Backend**: Node.js + Express
+- **Data Storage**: Local JSON file storage (`server/src/data/db.json`)
 
----
+## Prerequisites
 
-## 📚 Learning Science & Pedagogical Grounding
+- Node.js 18+
+- npm 9+
 
-- **Juha Sorva — Notional Machine Theory (2013)**: Software state is invisible. Making variable registers, stack frames, and mutation events visible eliminates the novice "black box" illusion.
-- **Michelene Chi — ICAP Framework (2009)**: Active and interactive cognitive engagement (predicting the next state before seeing it) yields significantly higher conceptual retention than passive code reading.
-- **K. Anders Ericsson — Deliberate Practice (1993)**: Immediate, targeted explanations on why a predicted state was correct or incorrect builds strong mental models.
-- **David Kolb — Experiential Learning Cycle (1984)**: Completes the 4th quadrant (Active Experimentation) by allowing students to step through, predict, and mutate code states directly.
+## Setup & Running
 
----
-
-## 🛠️ Tech Stack & Architecture
-
-- **Frontend**: React 18 + Vite, Lucide Icons, Modern Glassmorphism CSS design system.
-- **Backend**: Node.js + Express (RESTful API).
-- **Tracer Engine**: Deterministic AST-level state simulator in Node.js (offline-first, zero external sandbox risks).
-- **Data Store**: Local JSON storage (`server/src/data/db.json`).
-
----
-
-## 🚀 Quick Start Guide
-
-### 1. Prerequisites
-- **Node.js**: v18.0.0 or higher
-- **npm**: v9.0.0 or higher
-
-### 2. Installation & Setup
-From the `Shanmukha Medisetty` directory:
+1. Install dependencies:
 
 ```bash
-# Install root, server, and client dependencies
 npm run installAll
+```
 
-# Configure environment (defaults work offline out-of-the-box)
+2. Configure environment:
+
+```bash
 cp server/.env.example server/.env
+```
 
-# Seed the 30 scenario curriculum
+3. Seed scenario data:
+
+```bash
 npm run seed
+```
 
-# Launch both server (Port 5000) and client (Port 5173)
+4. Start development server:
+
+```bash
 npm run dev
 ```
 
-### 3. Accessing the Application
-- **Frontend UI**: http://localhost:5173
-- **Backend API**: http://localhost:5000/api
-- **Health Check**: http://localhost:5000/api/health
+- Frontend: http://localhost:5173
+- API: http://localhost:5000/api
 
----
-
-## 📡 API Endpoints Specification
+## API Endpoints
 
 ### `POST /api/tracer/trace`
-Generates step-by-step Notional Machine execution traces from scenario or user code.
-- **Request Body**: `{ "scenarioId": "...", "code": "optional custom code" }`
-- **Response**:
-```json
-{
-  "code": "samosa = 20\njuice = 15\ntotal = samosa + juice\nprint(f'Total: {total}')",
-  "totalSteps": 4,
-  "steps": [
-    {
-      "stepNumber": 1,
-      "line": 1,
-      "code": "samosa = 20",
-      "actionType": "assignment",
-      "variables": [
-        { "name": "samosa", "value": "20", "type": "int", "isNew": true, "isUpdated": false }
-      ],
-      "physicalAnchor": "🍽️ Canteen Counter: Ordering snack items.",
-      "checkpoint": null
-    }
-  ],
-  "stdout": ["Total: 35"],
-  "misconceptions": []
-}
-```
+Generates step-by-step execution traces from scenario or user code.
+- **Body**: `{ "scenarioId": "string", "code": "string (optional)" }`
+- **Response**: Returns execution steps, variables per step, stdout, and detected misconceptions.
 
 ### `POST /api/tracer/predict`
-Validates Socratic state prediction answers.
-- **Request Body**: `{ "checkpoint": { ... }, "selectedIndex": 0 }`
-- **Response**: `{ "isCorrect": true, "pedagogicalFeedback": "...", "explanation": "..." }`
+Checks a learner's answer for a prediction checkpoint.
+- **Body**: `{ "checkpoint": object, "selectedIndex": number }`
+- **Response**: `{ "isCorrect": boolean, "pedagogicalFeedback": "string", "explanation": "string" }`
 
----
+### `GET /api/scenarios`
+Returns the list of learning scenarios.
 
-## 📁 Repository Structure
+### `POST /api/sessions`
+Saves a completed learning session with reasoning, abstraction map, code, and tracer metrics.
+
+## Project Structure
 
 ```
-summership-26-prs/Shanmukha Medisetty/
 ├── client/
-│   ├── index.html                   # HTML entry point with Google Fonts
-│   ├── package.json                 # Client dependencies
-│   ├── vite.config.js               # Vite bundler config
+│   ├── index.html
+│   ├── package.json
+│   ├── vite.config.js
 │   └── src/
-│       ├── main.jsx                 # Top-level React UI & Notional Machine Stepper
-│       └── styles.css               # Modern glassmorphism design system
+│       ├── main.jsx
+│       └── styles.css
 ├── server/
-│   ├── package.json                 # Server dependencies
+│   ├── package.json
 │   ├── src/
-│   │   ├── index.js                 # Server entry & route mounting
-│   │   ├── seed.js                  # 30 scenario curriculum seed script
+│   │   ├── index.js
+│   │   ├── seed.js
 │   │   ├── data/
-│   │   │   ├── store.js             # JSON database store
-│   │   │   └── roadmap.js           # PyBe V0–V3 roadmap items
+│   │   │   ├── store.js
+│   │   │   └── roadmap.js
 │   │   ├── routes/
-│   │   │   ├── tracer.js            # Notional Machine & Prediction endpoints
-│   │   │   ├── scenarios.js         # Scenario CRUD
-│   │   │   ├── sessions.js          # Session persistence with tracerMetrics
-│   │   │   ├── analytics.js         # Cognitive analytics with prediction metrics
-│   │   │   ├── codeReview.js        # Static practice check
-│   │   │   └── roadmap.js           # Roadmap route
+│   │   │   ├── tracer.js
+│   │   │   ├── scenarios.js
+│   │   │   ├── sessions.js
+│   │   │   ├── analytics.js
+│   │   │   ├── codeReview.js
+│   │   │   └── roadmap.js
 │   │   └── services/
-│   │       ├── tracerEngine.js      # Core Notional Machine emulator & Misconception analyzer
-│   │       ├── codeEvaluator.js     # Static practice evaluator
-│   │       └── learningEngine.js    # Abstraction mapping & code generator
-└── readme.md                        # Project documentation
+│   │       ├── tracerEngine.js
+│   │       ├── codeEvaluator.js
+│   │       └── learningEngine.js
+└── readme.md
 ```
-
----
-
-## 👤 Author Information
-
-- **Contributor:** Shanmukha Medisetty
-- **Project:** PyBe TraceLab — Cognitive Notional Machine & Step-by-Step Python Simulator
