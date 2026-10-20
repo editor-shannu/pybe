@@ -3,6 +3,54 @@ require('dotenv').config();
 
 const scenarios = [
   {
+    title: 'Tatkal Berth Rush — The Senior Citizen Berth (0-Based Indexing)',
+    difficulty: 'Beginner',
+    concepts: ['lists', 'indexing', 'zero_based_indexing', 'tatkal_case_study'],
+    context: '10:00 AM Diwali Rush: Senior citizen Ramesh (Age 68) was #1 in the queue, but the script gave the priority lower berth to Priya! Trace memory to uncover the 0-based indexing trap.',
+    prompt: 'How does Python index elements in a list, and what expression accesses the actual first passenger in memory?',
+    objectives: ['Differentiate human count (1) vs memory offset (0)', 'Inspect list memory slots in Notional Machine', 'Fix queue index to prioritize Ramesh'],
+    sampleReasoning: 'Python lists start at index 0. Accessing queue[1] skips the first person and retrieves the second.',
+    effectivenessScore: 100,
+    isCaseStudy: true,
+    caseStudyAct: 1
+  },
+  {
+    title: 'Tatkal Berth Rush — Ghost Berth 72 (Range Boundary Exclusion)',
+    difficulty: 'Intermediate',
+    concepts: ['loops', 'range', 'off_by_one', 'tatkal_case_study'],
+    context: 'Coach S1 has 72 berths. The dispatch system reported 100% Full, but Berth 72 was found empty on the platform while a confirmed passenger was stranded!',
+    prompt: 'Why did range(1, 72) fail to allocate Berth 72, and what range upper-bound is required to include all 72 berths?',
+    objectives: ['Visualize loop termination in the Notional Machine', 'Discover that range(start, stop) excludes stop', 'Patch the boundary to range(1, 73)'],
+    sampleReasoning: 'In Python, range(1, 72) stops at 71. To include seat 72, the stop value must be 73.',
+    effectivenessScore: 99,
+    isCaseStudy: true,
+    caseStudyAct: 2
+  },
+  {
+    title: 'Tatkal Berth Rush — The Vanishing Booking Tally (Accumulator Reset)',
+    difficulty: 'Intermediate',
+    concepts: ['loops', 'variables', 'accumulator_pattern', 'tatkal_case_study'],
+    context: 'The midnight revenue audit script reported Total Confirmed = 1, despite 71 passengers having valid tickets. Where did the tally reset?',
+    prompt: 'Where should accumulator variables be initialized so their values persist across loop iterations?',
+    objectives: ['Observe variable destruction inside loop body', 'Understand accumulator variable lifecycle', 'Move total = 0 outside the loop to accumulate correctly'],
+    sampleReasoning: 'Declaring total = 0 inside the loop wipes memory on every passenger iteration. It must be initialized before the loop starts.',
+    effectivenessScore: 98,
+    isCaseStudy: true,
+    caseStudyAct: 3
+  },
+  {
+    title: 'Tatkal Berth Rush — Master Dispatcher (Mastery & Full Coach Allocation)',
+    difficulty: 'Mastery',
+    concepts: ['loops', 'indexing', 'range', 'accumulator_pattern', 'tatkal_case_study'],
+    context: 'Deploy the verified Master Tatkal Dispatcher for Coach S1: allocate all 72 berths, correctly assign the 0th passenger, and accurately compute revenue.',
+    prompt: 'Verify the combined Python logic to ensure zero stranded passengers, full 72-berth occupancy, and accurate revenue tally.',
+    objectives: ['Integrate 0-based indexing with inclusive range loops', 'Verify complete 72-berth Coach S1 layout', 'Confirm flawless revenue calculation'],
+    sampleReasoning: 'Combining queue[0] with range(1, 73) and an external total accumulator ensures all 72 seats are allocated and counted.',
+    effectivenessScore: 100,
+    isCaseStudy: true,
+    caseStudyAct: 4
+  },
+  {
     title: 'Bag Weight Label',
     difficulty: 'Beginner',
     concepts: ['variables'],

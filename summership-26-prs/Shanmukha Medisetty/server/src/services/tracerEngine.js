@@ -19,12 +19,13 @@ const MISCONCEPTION_PATTERNS = [
   {
     id: 'off_by_one_range',
     name: 'Range Upper Bound Exclusion',
-    trigger: (code) => /range\(\s*(\d+)\s*,\s*(\d+)\s*\)/.test(code),
+    trigger: (code) => /range\(\s*(\d+)\s*,\s*72\s*\)/.test(code) || (/range\(\s*(\d+)\s*,\s*(\d+)\s*\)/.test(code) && !code.includes('73') && !code.includes('Corrected') && !code.includes('Fixed')),
     detect: (code) => {
       const match = code.match(/range\(\s*(\d+)\s*,\s*(\d+)\s*\)/);
       if (match) {
         const start = parseInt(match[1], 10);
         const stop = parseInt(match[2], 10);
+        if (stop === 73 || code.includes('Corrected') || code.includes('Fixed')) return null;
         return {
           detected: true,
           message: `In Python, range(${start}, ${stop}) stops at ${stop - 1}, never reaching ${stop}. Many beginners expect it to include ${stop}.`,
@@ -47,11 +48,11 @@ const MISCONCEPTION_PATTERNS = [
   {
     id: 'accumulator_reset',
     name: 'Accumulator Scope Invariant',
-    trigger: (code) => /total\s*=\s*0|count\s*=\s*0/.test(code) && /for\s+/.test(code),
+    trigger: (code) => /total\w*\s*=\s*0|count\w*\s*=\s*0/.test(code) && /for\s+/.test(code),
     detect: (code) => {
       const lines = code.split('\n');
       const loopLineIdx = lines.findIndex(l => /^\s*for\s+/.test(l));
-      const resetInsideIdx = lines.findIndex((l, idx) => idx > loopLineIdx && /^\s{4,}(total|count)\s*=\s*0/.test(l));
+      const resetInsideIdx = lines.findIndex((l, idx) => idx > loopLineIdx && /^\s{4,}(total\w*|count\w*)\s*=\s*0/.test(l));
       if (resetInsideIdx !== -1) {
         return {
           detected: true,
@@ -241,6 +242,30 @@ function traceScenarioCode(scenario, userCode) {
       continue;
     }
 
+    // Method call: list.append(...)
+    const appendMatch = trimmed.match(/^([A-Za-z_]\w*)\.append\((.+)\)$/);
+    if (appendMatch) {
+      const listName = appendMatch[1];
+      const valExpr = appendMatch[2];
+      const val = evaluateExpression(valExpr, scope);
+      if (scope.hasOwnProperty(listName) && Array.isArray(scope[listName])) {
+        scope[listName] = [...scope[listName], val];
+      }
+      steps.push({
+        stepNumber: steps.length + 1,
+        line: lineNum,
+        code: rawLine,
+        actionType: 'method_call',
+        description: `Appended ${formatVal(val)} to '${listName}' list (now ${scope[listName]?.length || 0} items)`,
+        variables: cloneScope(scope, prevScope, listName),
+        stdout: [...stdout],
+        stackFrame: 'global_frame',
+        physicalAnchor: getPhysicalAnchor(scenario, scope, 'append', lineNum, listName),
+        checkpoint: null
+      });
+      continue;
+    }
+
     // For loop header: for item in collection:
     const forMatch = trimmed.match(/^for\s+([A-Za-z_]\w*)\s+in\s+(.+):$/);
     if (forMatch) {
@@ -250,6 +275,22 @@ function traceScenarioCode(scenario, userCode) {
 
       if (Array.isArray(collection) && collection.length > 0) {
         scope[iterVar] = collection[0];
+      }
+
+      let loopCheckpoint = null;
+      if (collExpr.includes('range(1, 72)')) {
+        loopCheckpoint = {
+          id: `cp_range_line_${lineNum}`,
+          type: 'range_prediction',
+          prompt: `Ghost Berth 72 Checkpoint: 'range(1, 72)' generates seat numbers for Coach S1. What will be the LAST seat number assigned before the loop stops?`,
+          context: `Coach S1 capacity is 72 berths. Code executes: for berth in range(1, 72):`,
+          options: [
+            `71 (range excludes the stop boundary, leaving Berth 72 unallocated!)`,
+            `72 (all 72 seats in the coach are assigned)`
+          ],
+          correctIndex: 0,
+          explanation: `In Python, range(start, stop) excludes the upper boundary! range(1, 72) terminates at 71. Berth 72 is never reached, leaving it as a Ghost Berth!`
+        };
       }
 
       steps.push({
@@ -262,7 +303,7 @@ function traceScenarioCode(scenario, userCode) {
         stdout: [...stdout],
         stackFrame: 'global_frame',
         physicalAnchor: getPhysicalAnchor(scenario, scope, 'loop_header', lineNum),
-        checkpoint: null
+        checkpoint: loopCheckpoint
       });
       continue;
     }
@@ -362,6 +403,44 @@ function evaluateExpression(expr, scope) {
       }
     }
     return obj;
+  }
+
+  // range(start, stop)
+  const rangeMatch = trimmed.match(/^range\(\s*(\d+)\s*,\s*(\d+)\s*\)$/);
+  if (rangeMatch) {
+    const start = parseInt(rangeMatch[1], 10);
+    const stop = parseInt(rangeMatch[2], 10);
+    const arr = [];
+    for (let n = start; n < stop; n++) {
+      arr.push(n);
+    }
+    return arr;
+  }
+
+  // List / Sequence indexing: list[index] or var[0]
+  const indexMatch = trimmed.match(/^([A-Za-z_]\w*)\[([^\]]+)\]$/);
+  if (indexMatch) {
+    const collName = indexMatch[1];
+    const idxExpr = indexMatch[2];
+    if (scope.hasOwnProperty(collName)) {
+      const target = scope[collName];
+      const idx = evaluateExpression(idxExpr, scope);
+      if (Array.isArray(target) || typeof target === 'string') {
+        return target[idx];
+      }
+      if (typeof target === 'object' && target !== null) {
+        return target[idx];
+      }
+    }
+  }
+
+  // Membership expression: item in collection
+  const inExprMatch = trimmed.match(/^(.+?)\s+in\s+([A-Za-z_]\w*)$/);
+  if (inExprMatch) {
+    const itemVal = evaluateExpression(inExprMatch[1], scope);
+    const coll = scope[inExprMatch[2]];
+    if (Array.isArray(coll)) return coll.includes(itemVal);
+    if (typeof coll === 'object' && coll !== null) return itemVal in coll;
   }
 
   // Variable lookup
@@ -475,7 +554,63 @@ function explainConditionTruth(condExpr, scope, result) {
 }
 
 function generateCheckpointIfNeeded(varName, evaluated, expr, scope, lineNum, scenario) {
-  // Only generate a Socratic question for interesting arithmetic or state changes
+  // Checkpoint 1: List Indexing (e.g. queue[1] vs queue[0])
+  const indexMatch = expr.match(/^([A-Za-z_]\w*)\[(\d+)\]$/);
+  if (indexMatch) {
+    const listName = indexMatch[1];
+    const idx = parseInt(indexMatch[2], 10);
+    const coll = scope[listName] || [];
+    return {
+      id: `cp_idx_line_${lineNum}`,
+      type: 'index_prediction',
+      prompt: `Tatkal VIP Queue Checkpoint: Line ${lineNum} accesses '${listName}[${idx}]'. In Python's memory model, who will actually receive this berth?`,
+      context: `Current queue in memory: ${JSON.stringify(coll)}`,
+      options: [
+        idx === 1
+          ? `The 2nd person in queue (${coll[1] || 'item #2'}), because Python list indices start at 0!`
+          : `The 1st person in queue (${coll[0] || 'item #1'}), because index 0 is the start of the sequence.`,
+        idx === 1
+          ? `The 1st person in queue (Ramesh), because 1 means first.`
+          : `An IndexError crash.`
+      ],
+      correctIndex: 0,
+      explanation: `In Python, sequences use 0-based indexing (offsets from the start of memory). ${listName}[0] is the 1st passenger, whereas ${listName}[1] is the 2nd passenger!`
+    };
+  }
+
+  // Checkpoint 2: range() upper bound exclusion (e.g. range(1, 72))
+  if (expr.includes('range(1, 72)')) {
+    return {
+      id: `cp_range_line_${lineNum}`,
+      type: 'range_prediction',
+      prompt: `Ghost Berth 72 Checkpoint: 'range(1, 72)' generates seat numbers for Coach S1. What will be the LAST seat number assigned before the loop stops?`,
+      context: `Coach S1 capacity is 72 berths. Code executes: for berth in range(1, 72):`,
+      options: [
+        `71 (range excludes the stop boundary, leaving Berth 72 unallocated!)`,
+        `72 (all 72 seats in the coach are assigned)`
+      ],
+      correctIndex: 0,
+      explanation: `In Python, range(start, stop) excludes the upper boundary! range(1, 72) terminates at 71. Berth 72 is never reached, leaving it as a Ghost Berth!`
+    };
+  }
+
+  // Checkpoint 3: Accumulator reset inside loop
+  if ((varName === 'total_confirmed' || varName === 'total') && evaluated === 0 && expr.trim() === '0') {
+    return {
+      id: `cp_accum_line_${lineNum}`,
+      type: 'accumulator_prediction',
+      prompt: `Audit Tally Invariant: Line ${lineNum} executes '${varName} = 0' inside the loop body. What happens to the running tally on each passenger iteration?`,
+      context: `Accumulating passenger count inside loop.`,
+      options: [
+        `It wipes memory back to 0 on every iteration, collapsing the final count to 1!`,
+        `Python remembers the earlier count and adds to it.`
+      ],
+      correctIndex: 0,
+      explanation: `Because '${varName} = 0' is indented inside the loop body, Python resets the variable back to 0 on every single passenger iteration!`
+    };
+  }
+
+  // General arithmetic checkpoint
   if (typeof evaluated === 'number' && (expr.includes('+') || expr.includes('*') || expr.includes('-'))) {
     const wrongVal1 = evaluated + 5;
     const wrongVal2 = Math.max(0, evaluated - 10);
@@ -496,6 +631,18 @@ function generateCheckpointIfNeeded(varName, evaluated, expr, scope, lineNum, sc
 function getPhysicalAnchor(scenario, scope, actionType, lineNum, varName = null, outputText = null, condResult = null) {
   const title = scenario?.title || 'Scenario';
   switch (title) {
+    case 'Tatkal Berth Rush — The Senior Citizen Berth (0-Based Indexing)':
+      if (scope.assigned_passenger) return `🚂 Platform 4 (Tatkal Dispatch): Assigned lower berth to '${scope.assigned_passenger}'. Notice Ramesh (Age 68) was skipped due to index 1!`;
+      return '🎫 Tatkal VIP Counter: Processing priority queue for Mumbai–Varanasi Superfast Express.';
+    case 'Tatkal Berth Rush — Ghost Berth 72 (Range Boundary Exclusion)':
+      if (scope.allocated_seats) return `🚃 Coach S1 (Bay 9): Allocated ${scope.allocated_seats.length} berths. Berth 72 status: ${scope.allocated_seats.includes(72) ? 'Occupied' : '⚠️ VACANT GHOST BERTH (Loop exited at 71)!'}`;
+      return '📋 Train Superintendent Log: Verifying physical sleeper coach capacity for 72 passengers.';
+    case 'Tatkal Berth Rush — The Vanishing Booking Tally (Accumulator Reset)':
+      if (scope.total_confirmed !== undefined) return `📊 IRCTC Revenue Audit: Current counter reading = ${scope.total_confirmed}. Watch it reset to 0 every time a passenger is processed!`;
+      return '🖥️ Audit Terminal: Running midnight batch tally for Coach S1 confirmed tickets.';
+    case 'Tatkal Berth Rush — Master Dispatcher (Mastery & Full Coach Allocation)':
+      if (scope.allocated_berths) return `✅ Station Master Verification: All ${scope.allocated_berths.length} of 72 berths allocated! Revenue collected: ₹${scope.total_revenue || 0}. Zero errors!`;
+      return '🚦 Master Signal: Coach S1 fully verified, passenger Ramesh secured berth 0, coach 100% full.';
     case 'Bag Weight Label':
       if (scope.bag_weight) return `⚖️ Digital Scale: School bag placed on the scale displays ${scope.bag_weight} kg.`;
       return '🎒 Physical Context: School bag resting on the classroom check-in desk.';
@@ -519,11 +666,57 @@ function getPhysicalAnchor(scenario, scope, actionType, lineNum, varName = null,
 }
 
 /**
- * Returns clean, curated, executable Python code tailored for each of the 30 PyBe scenarios.
+ * Returns clean, curated, executable Python code tailored for each scenario.
  */
 function getCuratedScenarioCode(scenario) {
   const title = scenario?.title || '';
   switch (title) {
+    case 'Tatkal Berth Rush — The Senior Citizen Berth (0-Based Indexing)':
+      return `# Tatkal VIP Queue: Senior Citizen Priority Allocation
+passengers = ["Ramesh (Age 68)", "Priya (Age 24)", "Tanmay (Age 31)"]
+
+# Bug: Trainee accessed index 1 expecting the first passenger!
+assigned_passenger = passengers[1]
+berth_allocated = "Lower Berth 12"
+
+print(f"Allocated {berth_allocated} to: {assigned_passenger}")`;
+    case 'Tatkal Berth Rush — Ghost Berth 72 (Range Boundary Exclusion)':
+      return `# Coach S1: 72 Physical Berths Total
+total_berths = 72
+allocated_seats = []
+
+# Bug: In Python, range(start, stop) excludes the stop value!
+for berth_no in range(1, 72):
+    allocated_seats.append(berth_no)
+
+print(f"Total berths allocated: {len(allocated_seats)}")
+print(f"Was Berth 72 allocated? {72 in allocated_seats}")`;
+    case 'Tatkal Berth Rush — The Vanishing Booking Tally (Accumulator Reset)':
+      return `# Midnight Audit: Tallying confirmed sleeper tickets
+confirmed_passengers = ["Ramesh", "Priya", "Tanmay", "Aarav", "Deepa"]
+
+# Bug: Accumulator reset inside the loop!
+for passenger in confirmed_passengers:
+    total_confirmed = 0
+    total_confirmed = total_confirmed + 1
+
+print(f"Audit Tally: {total_confirmed}")`;
+    case 'Tatkal Berth Rush — Master Dispatcher (Mastery & Full Coach Allocation)':
+      return `# Master Tatkal Dispatcher - Coach S1 (Corrected & Verified)
+queue = ["Ramesh (Senior)", "Priya", "Tanmay"]
+first_vip = queue[0]  # Corrected: 0-based indexing!
+
+total_revenue = 0     # Corrected: Accumulator outside loop!
+fare_per_berth = 450
+allocated_berths = []
+
+for seat in range(1, 73):  # Corrected: includes Berth 72!
+    allocated_berths.append(seat)
+    total_revenue = total_revenue + fare_per_berth
+
+print(f"First Passenger Allocated: {first_vip}")
+print(f"Total Berths Assigned: {len(allocated_berths)} of 72")
+print(f"Total Revenue Collected: ₹{total_revenue}")`;
     case 'Bag Weight Label':
       return `# Store single bag weight\nbag_weight = 4.5\nprint(f"Recorded school bag weight: {bag_weight} kg")`;
     case 'Two Snack Prices':
