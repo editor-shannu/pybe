@@ -1,105 +1,102 @@
-# PyBe TraceLab — Interactive Python Execution & Notional Machine
+# The Tatkal Berth Rush — PyBe Interactive Discovery Lab
+### Interactive Python Execution Stepper & Notional Machine Visualizer
 
-## Overview
+[![JavaScript](https://img.shields.io/badge/JavaScript-React%2018%20%2B%20Vite-61DAFB?logo=react&logoColor=black)](https://react.dev)
+[![Node.js](https://img.shields.io/badge/Node.js-Express%20REST%20API-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org)
+[![Quality Gates](https://img.shields.io/badge/Quality%20Gates-Passing-success)](case-study.md)
+[![Case Study](https://img.shields.io/badge/PyBe-Case%20Study%20Certified-orange)](product.md)
 
-PyBe TraceLab adds an interactive code execution and state inspection interface to PyBe. It allows learners to step through Python code line-by-line, observe variable changes in memory, and predict execution state before code runs.
+> Discover Python sequence indexing (`0`-based offset), range boundaries (`range(start, stop)` upper-bound exclusion), and variable mutation organically through the high-stakes pressure of a Diwali railway Tatkal booking rush.
 
-## Features
+---
 
-- **Step Stepper**: Step forward and backward through Python code line-by-line with play/pause and adjustable speed controls.
-- **Variable Memory Watch**: Shows variable names, data types, current values, and highlights updated variables during execution.
-- **State Prediction Checkpoints**: Prompts learners at key steps to predict variable values or branch outcomes before execution proceeds.
-- **Real-World Context Anchors**: Connects code execution steps to the scenario's physical context.
-- **Misconception Detection**: Checks for common beginner errors like assignment in conditions, range boundaries, and accumulator placement.
-- **Interactive Sandbox**: Allows testing custom Python code with live step-by-step state tracing.
-- **Learning Analytics**: Displays session metrics, concept counts, and prediction accuracy.
+## 📖 Case Study Documentation
 
-## Tech Stack
+- 📋 [**case-study.md**](case-study.md): Complete pedagogical narrative, Indian Railways domain mapping, 4-act progression, and mental model analysis.
+- 🎯 [**product.md**](product.md): Detailed product specification, SOLO taxonomy alignment, system architecture, and verification gates.
 
-- **Frontend**: React + Vite, Lucide Icons, Plain CSS
-- **Backend**: Node.js + Express
-- **Data Storage**: Local JSON file storage (`server/src/data/db.json`)
+---
 
-## Prerequisites
+## 🌟 Executive Overview
 
-- Node.js 18+
-- npm 9+
+**The Tatkal Berth Rush** is an interactive, story-driven case study engineered for the **PyBe (Python by Experience)** platform. 
 
-## Setup & Running
+Instead of teaching Python syntax deductively through abstract rules or dry numerical prints, it grounds core programming mechanics in the concrete operational dilemmas of booking **Coach S1 (72 sleeper berths)** on the Mumbai–Varanasi Superfast Express:
 
-1. Install dependencies:
+| Real-World Railway Dilemma | Python Construct / Bug | Notional Machine Insight |
+| :--- | :--- | :--- |
+| **Senior Citizen Skipped:** Ramesh (#1 in queue) bypassed for lower berth. | `assigned = queue[1]` | **Zero-Based Indexing:** Python sequences measure offset from start (`0`), not human counting (`1`). `queue[1]` is the *second* passenger! |
+| **Ghost Berth 72 Left Empty:** Coach marked "Full" while Berth 72 sits vacant. | `for berth in range(1, 72):` | **Range Upper-Bound Exclusion:** `range(start, stop)` stops at `stop - 1`. `range(1, 72)` stops at 71; Berth 72 is never reached. |
+| **Audit Counter Collapses:** Revenue tally reports `Total Confirmed: 1`. | `total = 0` inside loop | **Accumulator Scope Reset:** Re-initializing accumulators inside a loop destroys memory state on every single iteration. |
 
+---
+
+## 🚀 Key Features
+
+- **Interactive Coach S1 72-Berth Schematic:** Live SVG/grid visualization of all 9 compartments and 72 berths (Lower, Middle, Upper, Side Lower, Side Upper), highlighting allocated berths in emerald green and ghost/unallocated berths in warning amber.
+- **Bi-Directional Execution Stepper:** Step forward and backward line-by-line with play/pause and adjustable playback speeds (0.5x, 1x, 2x).
+- **Live Memory Watch Panel (The Notional Machine):** Displays variable names, data types (`int`, `str`, `list`, `bool`), memory values, and highlights updated variables in real time.
+- **Socratic State Prediction Checkpoints:** Pauses before critical state-mutating lines to prompt the learner to predict the outcome before seeing the answer.
+- **Automated Misconception Detection:** Detects `off_by_one_range`, `list_index_zero_based`, `accumulator_reset`, and assignment vs equality errors.
+- **Interactive Sandbox & Custom Code Trace:** Allows testing any custom Python snippet with live step-by-step state tracing.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend:** React 18, Vite, Lucide Icons, Vanilla CSS with custom cyber-rail design tokens and Emil Kowalski motion principles.
+- **Backend:** Node.js + Express REST API with deterministic AST evaluation (zero external cloud LLM dependencies).
+- **Data Storage:** Local JSON file storage (`server/src/data/db.json`).
+
+---
+
+## ⚡ Quick Start
+
+### 1. Install Dependencies
 ```bash
 npm run installAll
 ```
 
-2. Configure environment:
-
+### 2. Configure Environment
 ```bash
 cp server/.env.example server/.env
 ```
 
-3. Seed scenario data:
-
+### 3. Seed Case Study Data
 ```bash
 npm run seed
 ```
 
-4. Start development server:
-
+### 4. Start Development Servers
 ```bash
 npm run dev
 ```
 
-- Frontend: http://localhost:5173
-- API: http://localhost:5000/api
+* **Frontend:** http://localhost:5173
+* **Backend API:** http://localhost:5000/api
 
-## API Endpoints
+---
 
-### `POST /api/tracer/trace`
-Generates step-by-step execution traces from scenario or user code.
-- **Body**: `{ "scenarioId": "string", "code": "string (optional)" }`
-- **Response**: Returns execution steps, variables per step, stdout, and detected misconceptions.
-
-### `POST /api/tracer/predict`
-Checks a learner's answer for a prediction checkpoint.
-- **Body**: `{ "checkpoint": object, "selectedIndex": number }`
-- **Response**: `{ "isCorrect": boolean, "pedagogicalFeedback": "string", "explanation": "string" }`
-
-### `GET /api/scenarios`
-Returns the list of learning scenarios.
-
-### `POST /api/sessions`
-Saves a completed learning session with reasoning, abstraction map, code, and tracer metrics.
-
-## Project Structure
+## 🗺️ Project Structure
 
 ```
-├── client/
-│   ├── index.html
+Shanmukha Medisetty/
+├── client/                     # Interactive React 18 frontend
+│   ├── index.html              # HTML container
 │   ├── package.json
 │   ├── vite.config.js
 │   └── src/
-│       ├── main.jsx
-│       └── styles.css
-├── server/
+│       ├── main.jsx            # Application coordinator & Coach S1 visualizer
+│       └── styles.css          # Design tokens & responsive styles
+├── server/                     # Express REST backend
 │   ├── package.json
-│   ├── src/
-│   │   ├── index.js
-│   │   ├── seed.js
-│   │   ├── data/
-│   │   │   ├── store.js
-│   │   │   └── roadmap.js
-│   │   ├── routes/
-│   │   │   ├── tracer.js
-│   │   │   ├── scenarios.js
-│   │   │   ├── sessions.js
-│   │   │   ├── analytics.js
-│   │   │   ├── codeReview.js
-│   │   │   └── roadmap.js
-│   │   └── services/
-│   │       ├── tracerEngine.js
-│   │       ├── codeEvaluator.js
-│   │       └── learningEngine.js
-└── readme.md
+│   └── src/
+│       ├── index.js            # Express server
+│       ├── seed.js             # Seeding Tatkal Berth Rush Case Study
+│       ├── data/               # Persistent JSON storage
+│       ├── routes/             # REST endpoints (/tracer, /scenarios, /sessions)
+│       └── services/           # Deterministic AST tracer engine & Notional Machine
+├── case-study.md               # Complete Case Study narrative & pedagogical design
+├── product.md                  # Comprehensive product specification
+└── readme.md                   # Quick-start guide and project overview
 ```
