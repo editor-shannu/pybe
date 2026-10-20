@@ -27,8 +27,10 @@ import {
   Terminal,
   Zap,
   Gauge,
-  Sliders
+  Sliders,
+  Train
 } from 'lucide-react';
+import { TatkalCaseStudy } from './components/TatkalCaseStudy';
 import './styles.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -43,7 +45,7 @@ async function api(path, options) {
 }
 
 function App() {
-  const [activeTab, setActiveTab] = useState('tracer'); // 'tracer' | 'scenario' | 'sandbox' | 'analytics'
+  const [activeTab, setActiveTab] = useState('tatkal'); // 'tatkal' | 'tracer' | 'scenario' | 'sandbox' | 'analytics'
   const [scenarios, setScenarios] = useState([]);
   const [selected, setSelected] = useState(null);
   const [sessions, setSessions] = useState([]);
@@ -276,12 +278,23 @@ function App() {
 
         <nav className="mode-tabs">
           <button
+            className={`tab-btn tab-tatkal ${activeTab === 'tatkal' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('tatkal');
+              const tatkalScen = scenarios.find((s) => s.isCaseStudy) || scenarios[0];
+              if (tatkalScen) handleSelectScenario(tatkalScen);
+            }}
+          >
+            <Train size={17} />
+            <span>Tatkal Case Study</span>
+            <span className="pill-hot">Flagship</span>
+          </button>
+          <button
             className={`tab-btn ${activeTab === 'tracer' ? 'active' : ''}`}
             onClick={() => setActiveTab('tracer')}
           >
             <Cpu size={17} />
             <span>Notional Machine Lab</span>
-            <span className="pill-hot">Core</span>
           </button>
           <button
             className={`tab-btn ${activeTab === 'scenario' ? 'active' : ''}`}
@@ -383,6 +396,29 @@ function App() {
 
         {/* Center/Right Dynamic Workspace */}
         <main className="main-content">
+          {/* TAB 0: FLAGSHIP TATKAL BERTH RUSH CASE STUDY */}
+          {activeTab === 'tatkal' && (
+            <TatkalCaseStudy
+              scenarios={scenarios}
+              selectedScenario={selected}
+              onSelectScenario={handleSelectScenario}
+              traceData={traceData}
+              currentStepIndex={currentStepIndex}
+              setCurrentStepIndex={setCurrentStepIndex}
+              isPlaying={isPlaying}
+              setIsPlaying={setIsPlaying}
+              playbackSpeed={playbackSpeed}
+              setPlaybackSpeed={setPlaybackSpeed}
+              stepNext={stepNext}
+              stepPrev={stepPrev}
+              resetTrace={resetTrace}
+              predictionState={predictionState}
+              submitPrediction={submitPrediction}
+              onRunCustomTrace={(code) => loadTraceForScenario(selected, code)}
+              traceLoading={traceLoading}
+            />
+          )}
+
           {/* TAB 1: NOTIONAL MACHINE & STEP TRACER */}
           {activeTab === 'tracer' && (
             <div className="tracer-view-grid">
